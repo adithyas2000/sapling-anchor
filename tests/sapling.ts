@@ -44,30 +44,31 @@ describe("sapling", () => {
     }
 
   });
-  // it("should not remove tree variant if not admin", async () => {
-  //   const user = anchor.web3.Keypair.generate();
-  //   await getFundsToWallet(anchor.getProvider().connection, user.publicKey, 2);
-  //   const failingTx = async () => {
-  //     const tx = await program.methods.removeTreeVariant("1111")
-  //       .accounts({ caller: user.publicKey, admin: user.publicKey })
-  //       .signers([user]).rpc();
-  //   }
-  //   try {
-  //     await failingTx();
-  //     expect.fail("Expected transaction to fail");
-  //   } catch (e) {
-  //     expect(e.message).to.include("Caller is not the admin");
-  //   }
-  // });
-  // it("should not remove tree variant if not found", async () => {
-  //   const failingTx = async () => { const tx = await program.methods.removeTreeVariant("3333").accounts({}).rpc(); }
-  //   try {
-  //     await failingTx();
-  //     expect.fail("Expected transaction to fail");
-  //   } catch (e) {
-  //     expect(e.message).to.include("A variant by the given ID was not found");
-  //   }
-  // });
+  it("should not remove tree variant if not admin", async () => {
+    const user = anchor.web3.Keypair.generate();
+    await getFundsToWallet(anchor.getProvider().connection, user.publicKey, 2);
+    const failingTx = async () => {
+      const tx = await program.methods.removeTreeVariant("1111")
+        .accounts({ caller: user.publicKey, admin: user.publicKey })
+        .signers([user]).rpc();
+    }
+    try {
+      await failingTx();
+      expect.fail("Expected transaction to fail");
+    } catch (e) {
+      expect(e.message).to.include("Caller is not the admin");
+    }
+  });
+  it("should not remove tree variant if not found", async () => {
+    const failingTx = async () => { const tx = await program.methods.removeTreeVariant("3333").accounts({}).rpc(); }
+    try {
+      await failingTx();
+      expect.fail("Expected transaction to fail");
+    } catch (e) {
+      console.log(e);
+      expect(e.message).to.include("The program expected this account to be already initialized");
+    }
+  });
   it("should remove tree variant", async () => {
     const tx = await program.methods.removeTreeVariant("1111").accounts({}).rpc();
     console.log("Your transaction signature", tx);
