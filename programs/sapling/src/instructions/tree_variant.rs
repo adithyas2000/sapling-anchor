@@ -1,8 +1,5 @@
 use crate::error::ErrorCode;
-use crate::{
-    state::{TreeVariant, TreeVariantAccount},
-    Config,
-};
+use crate::{state::TreeVariant, Config};
 use anchor_lang::prelude::*;
 
 pub fn add_tree_variant_as_admin(
@@ -12,47 +9,38 @@ pub fn add_tree_variant_as_admin(
     cost_per_month: u64,
     max_lifetime_in_months: u64,
 ) -> Result<()> {
-    let new_variant = TreeVariant {
-        const_per_month: cost_per_month,
-        tree_type_id: id,
-        tree_type_name: name,
-        max_lifetime_in_months: max_lifetime_in_months,
-    };
-    ctx.accounts
-        .tree_variant_account
-        .tree_variants
-        .push(new_variant);
+    let new_variant = &mut ctx.accounts.tree_variant;
+    new_variant.tree_type_id = id;
+    new_variant.tree_type_name = name;
+    new_variant.cost_per_month = cost_per_month;
+    new_variant.max_lifetime_in_months = max_lifetime_in_months;
     Ok(())
 }
 
-pub fn remove_tree_variant_as_admin(ctx: Context<RemoveTreeVariant>, id: String) -> Result<()> {
-    let variants = &mut ctx.accounts.tree_variant_account.tree_variants;
-    let matching_variant = variants.iter().position(|tree| tree.tree_type_id == id);
-    if let Some(i) = matching_variant {
-        variants.remove(i);
-        Ok(())
-    } else {
-        err!(ErrorCode::TreeVariantNotFound)
-    }
+pub fn remove_tree_variant_as_admin(_ctx: Context<RemoveTreeVariant>, _id: String) -> Result<()> {
+    Ok(())
 }
 
 #[derive(Accounts)]
+#[instruction(id:String)]
 pub struct AddTreeVariant<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(seeds=[b"config"],bump,has_one=admin @ ErrorCode::Unauthorized)]
     pub config: Account<'info, Config>,
 
-    #[account(mut,seeds=[b"tree_variant"],bump)]
-    pub tree_variant_account: Account<'info, TreeVariantAccount>,
+    #[account(init,payer=admin,seeds=[b"tree_variant",id.as_bytes()],bump,space=8+TreeVariant::INIT_SPACE)]
+    pub tree_variant: Account<'info, TreeVariant>,
+    pub system_program: Program<'info, System>,
 }
 #[derive(Accounts)]
+#[instruction(_id:String)]
 pub struct RemoveTreeVariant<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
     #[account(seeds=[b"config"],bump,has_one=admin @ ErrorCode::Unauthorized)]
     pub config: Account<'info, Config>,
-
-    #[account(mut,seeds=[b"tree_variant"],bump)]
-    pub tree_variant_account: Account<'info, TreeVariantAccount>,
+    #[account(mut,close=admin,seeds=[b"tree_variant",_id.as_bytes()],bump)]
+    pub tree_variant: Account<'info, TreeVariant>,
+    pub system_program: Program<'info, System>,
 }

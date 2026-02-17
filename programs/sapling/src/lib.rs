@@ -4,7 +4,6 @@ pub mod state;
 pub use instructions::*;
 pub mod error;
 
-use crate::state::TreeVariantAccount;
 
 declare_id!("CmUSs1qB9t4Wtv73DvBqf3XH8L8BLnLWhnXzCA3Qrf5L");
 
@@ -17,10 +16,6 @@ pub mod sapling {
         let config_acc = &mut ctx.accounts.config;
         config_acc.admin = *ctx.accounts.deployer.key;
         msg!("Set {} as admin", config_acc.admin.to_string());
-        msg!(
-            "Tree variant account: {}",
-            ctx.accounts.tree_variant_acount.key()
-        );
         Ok(())
     }
     pub fn add_tree_variant(
@@ -49,7 +44,5 @@ pub struct Initialize<'info> {
     pub config: Account<'info, Config>,
     #[account(mut)]
     pub deployer: Signer<'info>,
-    #[account(init,payer=deployer,seeds=[b"tree_variant"],bump,space=9000)]
-    pub tree_variant_acount: Account<'info, TreeVariantAccount>,
     pub system_program: Program<'info, System>,
 }
