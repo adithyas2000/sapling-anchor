@@ -20,12 +20,33 @@ describe("sapling", () => {
     console.log("Your transaction signature", tx);
     const [treeVariantPDA] = anchor.web3.PublicKey.findProgramAddressSync([Buffer.from("tree_variant"), Buffer.from("1111")], program.programId);
     const treeVariantAccount = await program.account.treeVariant.fetch(treeVariantPDA);
-    console.log(treeVariantAccount);
     expect(treeVariantAccount.treeTypeId).to.equal("1111");
     expect(treeVariantAccount.treeTypeName).to.equal("Oak");
     expect(treeVariantAccount.costPerMonth.toString()).to.equal(new anchor.BN(10000).toString());
     expect(treeVariantAccount.maxLifetimeInMonths.toString()).to.equal(new anchor.BN(36).toString());
   });
+
+
+
+  it("should rent tree", async () => {
+    const rentalId = "1111";
+    const rentDurationMonths = new anchor.BN(12);
+    const tx = await program.methods.rentTree(rentalId, rentDurationMonths).accounts({}).rpc();
+    console.log("Your transaction signature", tx);
+    const [treeRentalPDA] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(anchor.AnchorProvider.env().wallet.publicKey.toBuffer()), Buffer.from(rentalId), rentDurationMonths.toArrayLike(Buffer, "le", 8)],
+      program.programId
+    );
+    const treeRentalAccount = await anchor.getProvider().connection.getAccountInfo(treeRentalPDA);
+    expect(treeRentalAccount).to.not.be.null;
+
+    const treeRentalAccountData = await program.account.userTreeRental.fetch(treeRentalPDA);
+    expect(treeRentalAccountData.treeTypeId).to.equal(rentalId);
+    expect(treeRentalAccountData.durationInMonths.toString()).to.equal(rentDurationMonths.toString());
+  });
+
+
   it("should not add tree variant if not admin", async () => {
     const user = anchor.web3.Keypair.generate();
     await getFundsToWallet(anchor.getProvider().connection, user.publicKey, 5);
@@ -65,7 +86,6 @@ describe("sapling", () => {
       await failingTx();
       expect.fail("Expected transaction to fail");
     } catch (e) {
-      console.log(e);
       expect(e.message).to.include("The program expected this account to be already initialized");
     }
   });

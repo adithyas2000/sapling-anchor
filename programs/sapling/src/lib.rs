@@ -4,7 +4,6 @@ pub mod state;
 pub use instructions::*;
 pub mod error;
 
-
 declare_id!("CmUSs1qB9t4Wtv73DvBqf3XH8L8BLnLWhnXzCA3Qrf5L");
 
 #[program]
@@ -30,6 +29,14 @@ pub mod sapling {
 
     pub fn remove_tree_variant(ctx: Context<RemoveTreeVariant>, id: String) -> Result<()> {
         remove_tree_variant_as_admin(ctx, id)
+    }
+
+    pub fn rent_tree(
+        ctx: Context<RentTree>,
+        rent_tree_id: String,
+        rent_duration_months: u64,
+    ) -> Result<()> {
+        rent(ctx, rent_tree_id, rent_duration_months)
     }
 }
 

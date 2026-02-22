@@ -14,6 +14,7 @@ pub fn add_tree_variant_as_admin(
     new_variant.tree_type_name = name;
     new_variant.cost_per_month = cost_per_month;
     new_variant.max_lifetime_in_months = max_lifetime_in_months;
+    new_variant.is_active = true;
     Ok(())
 }
 
