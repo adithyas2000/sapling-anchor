@@ -1,20 +1,54 @@
 use anchor_lang::prelude::*;
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_2022::MintTo,
+    token_interface::{self, Mint, TokenAccount, TokenInterface},
+};
 
-use crate::state::UserTreeRental;
+// use crate::state::UserTreeRental;
 
-pub fn rent(ctx: Context<RentTree>, rent_tree_id: String, rent_duration_months: u64) -> Result<()> {
-    ctx.accounts.tree_rental_pda.tree_type_id = rent_tree_id;
-    ctx.accounts.tree_rental_pda.duration_in_months = rent_duration_months;
-    msg!("REntal account created: {}",ctx.accounts.tree_rental_pda.key());
-    Ok(())
+pub fn rent(
+    ctx: Context<RentTree>,
+    _rent_tree_id: String,
+    _rent_duration_months: u64,
+) -> Result<()> {
+    msg!("Derived mint address: {}", ctx.accounts.mint.key());
+    let signer_seeds: &[&[&[u8]]] = &[&[b"token_mint", &[ctx.bumps.mint]]];
+    let cpi_accounts = MintTo {
+        mint: ctx.accounts.mint.to_account_info(),
+        to: ctx.accounts.associated_token_account.to_account_info(),
+        authority: ctx.accounts.mint.to_account_info(),
+    };
+    let cpi_program = ctx.accounts.token_program.to_account_info();
+    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts).with_signer(signer_seeds);
+    let result = token_interface::mint_to(cpi_ctx, 1);
+    msg!("minted 1 token to the signer");
+    result
 }
 
 #[derive(Accounts)]
-#[instruction(rent_tree_id:String,rent_duration_months:u64)]
+// #[instruction(rent_tree_id:String,rent_duration_months:u64)]
 pub struct RentTree<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
-    #[account(init,payer=signer,seeds=[&signer.key.to_bytes(),rent_tree_id.as_bytes(),&rent_duration_months.to_le_bytes()],bump,space=8+UserTreeRental::INIT_SPACE)]
-    pub tree_rental_pda: Account<'info, UserTreeRental>,
+    #[account(mut,seeds=[b"token_mint"],bump)]
+    pub mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Interface<'info, TokenInterface>,
+    #[account(
+        mut,
+        seeds = [b"token_account"],
+        bump
+    )]
+    pub token_account: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        associated_token::mint=mint,
+        associated_token::authority=signer,
+        associated_token::token_program=token_program
+    )]
+    pub associated_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
     pub system_program: Program<'info, System>,
 }
