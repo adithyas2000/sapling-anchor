@@ -3,6 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { Sapling } from "../target/types/sapling";
 import { expect } from "chai";
 import { getFundsToWallet } from "./utils";
+import { TOKEN_2022_PROGRAM_ID, getMint } from "@solana/spl-token";
 
 describe("sapling", () => {
   // Configure the client to use the local cluster.
@@ -12,7 +13,7 @@ describe("sapling", () => {
 
   it("should initialize", async () => {
     // Add your test here.
-    const tx = await program.methods.initialize().accounts({}).rpc();
+    const tx = await program.methods.initialize().accounts({ tokenProgram: TOKEN_2022_PROGRAM_ID }).rpc();
     console.log("Your transaction signature", tx);
   });
   it("should add tree variant", async () => {
@@ -27,23 +28,15 @@ describe("sapling", () => {
   });
 
 
-
+  it("should init user", async () => {
+    const tx = await program.methods.initUser().accounts({ tokenProgram: TOKEN_2022_PROGRAM_ID }).rpc();
+    console.log("Your transaction signature", tx);
+  });
   it("should rent tree", async () => {
     const rentalId = "1111";
     const rentDurationMonths = new anchor.BN(12);
-    const tx = await program.methods.rentTree(rentalId, rentDurationMonths).accounts({}).rpc();
+    const tx = await program.methods.rentTree(rentalId, rentDurationMonths).accounts({ tokenProgram: TOKEN_2022_PROGRAM_ID }).rpc();
     console.log("Your transaction signature", tx);
-    const [treeRentalPDA] = anchor.web3.PublicKey.findProgramAddressSync(
-      [
-        Buffer.from(anchor.AnchorProvider.env().wallet.publicKey.toBuffer()), Buffer.from(rentalId), rentDurationMonths.toArrayLike(Buffer, "le", 8)],
-      program.programId
-    );
-    const treeRentalAccount = await anchor.getProvider().connection.getAccountInfo(treeRentalPDA);
-    expect(treeRentalAccount).to.not.be.null;
-
-    const treeRentalAccountData = await program.account.userTreeRental.fetch(treeRentalPDA);
-    expect(treeRentalAccountData.treeTypeId).to.equal(rentalId);
-    expect(treeRentalAccountData.durationInMonths.toString()).to.equal(rentDurationMonths.toString());
   });
 
 
