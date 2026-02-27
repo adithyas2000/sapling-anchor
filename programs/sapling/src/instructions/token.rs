@@ -14,7 +14,7 @@ pub fn init_token_metadata(ctx: Context<Initialize>) -> Result<()> {
 
     let name = "Tree Rental".to_string();
     let symbol = "TREE".to_string();
-    let uri = "".to_string();
+    let uri = "https://raw.githubusercontent.com/adithyas2000/sapling-anchor/refs/heads/main/metadata.json".to_string();
     let token_metadata = TokenMetadata {
         name: name.clone(),
         symbol: symbol.clone(),
