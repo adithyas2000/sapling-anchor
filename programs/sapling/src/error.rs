@@ -5,4 +5,6 @@ pub enum ErrorCode {
     TreeVariantNotFound,
     #[msg("Caller is not the admin")]
     Unauthorized,
+    #[msg("Error packing metadata")]
+    MetadataPackingError
 }

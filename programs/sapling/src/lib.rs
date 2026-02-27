@@ -3,7 +3,7 @@ pub mod instructions;
 pub mod state;
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    token_interface::{Mint, Token2022, TokenAccount},
 };
 pub use instructions::*;
 pub mod error;
@@ -20,6 +20,9 @@ pub mod sapling {
         config_acc.admin = ctx.accounts.deployer.key();
         msg!("Set {} as admin", config_acc.admin.to_string());
         msg!("Mint created: {}", ctx.accounts.mint.key());
+        msg!("Initializing metadata...");
+        init_token_metadata(ctx)?;
+        msg!("Initialized token metadata");
         Ok(())
     }
     pub fn add_tree_variant(
@@ -36,13 +39,13 @@ pub mod sapling {
         remove_tree_variant_as_admin(ctx, id)
     }
 
-    pub fn init_user(ctx: Context<InitUser>) -> Result<()> {
-        msg!(
-            "Created ATA for signer: {}",
-            ctx.accounts.token_account.key()
-        );
-        Ok(())
-    }
+    // pub fn init_user(ctx: Context<InitUser>) -> Result<()> {
+    //     msg!(
+    //         "Created ATA for signer: {}",
+    //         ctx.accounts.token_account.key()
+    //     );
+    //     Ok(())
+    // }
 
     pub fn rent_tree(
         ctx: Context<RentTree>,
@@ -71,6 +74,8 @@ pub struct Initialize<'info> {
         mint::authority=mint.key(),
         mint::freeze_authority=mint.key(),
         seeds=[b"token_mint"],
+        extensions::metadata_pointer::authority = deployer,
+        extensions::metadata_pointer::metadata_address = mint,
         bump
     )]
     pub mint: InterfaceAccount<'info, Mint>,
@@ -84,30 +89,30 @@ pub struct Initialize<'info> {
         bump
     )]
     pub token_account: InterfaceAccount<'info, TokenAccount>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
-#[derive(Accounts)]
-pub struct InitUser<'info> {
-    #[account(mut)]
-    pub signer: Signer<'info>,
-    #[account(
-        init,
-        payer=signer,
-        associated_token::mint=mint,
-        associated_token::authority=signer,
-        associated_token::token_program=token_program
-    )]
-    pub token_account: InterfaceAccount<'info, TokenAccount>,
+// #[derive(Accounts)]
+// pub struct InitUser<'info> {
+//     #[account(mut)]
+//     pub signer: Signer<'info>,
+    // #[account(
+    //     init,
+    //     payer=signer,
+    //     associated_token::mint=mint,
+    //     associated_token::authority=signer,
+    //     associated_token::token_program=token_program
+    // )]
+//     pub token_account: InterfaceAccount<'info, TokenAccount>,
 
-    #[account(
-        seeds=[b"token_mint"],
-        bump
-    )]
-    pub mint: InterfaceAccount<'info, Mint>,
-    pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-}
+//     #[account(
+//         seeds=[b"token_mint"],
+//         bump
+//     )]
+//     pub mint: InterfaceAccount<'info, Mint>,
+//     pub system_program: Program<'info, System>,
+//     pub token_program: Program<'info, Token2022>,
+//     pub associated_token_program: Program<'info, AssociatedToken>,
+// }

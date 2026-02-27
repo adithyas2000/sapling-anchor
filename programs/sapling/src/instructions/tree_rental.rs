@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_2022::MintTo,
-    token_interface::{self, Mint, TokenAccount, TokenInterface},
+    token_interface::{self, Mint, Token2022, TokenAccount},
 };
 
 // use crate::state::UserTreeRental;
@@ -33,7 +33,7 @@ pub struct RentTree<'info> {
     pub signer: Signer<'info>,
     #[account(mut,seeds=[b"token_mint"],bump)]
     pub mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token2022>,
     #[account(
         mut,
         seeds = [b"token_account"],
@@ -42,7 +42,8 @@ pub struct RentTree<'info> {
     pub token_account: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer=signer,
         associated_token::mint=mint,
         associated_token::authority=signer,
         associated_token::token_program=token_program
