@@ -10,16 +10,12 @@ describe("sapling", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const program = anchor.workspace.sapling as Program<Sapling>;
-  const [mintPDA] = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("token_mint")],
-    program.programId
-  );
   const userWallet = anchor.web3.Keypair.generate();
   console.log("User wallet public key", userWallet.publicKey.toBase58());
 
   it("should initialize", async () => {
 
-    const tx = await program.methods.initialize().accountsPartial({ mint: mintPDA, deployer: anchor.getProvider().wallet.publicKey }).rpc();
+    const tx = await program.methods.initialize().accountsPartial({ deployer: anchor.getProvider().wallet.publicKey }).rpc();
     console.log("Your transaction signature", tx);
   });
   it("should add tree variant", async () => {
@@ -43,7 +39,28 @@ describe("sapling", () => {
     await getFundsToWallet(anchor.getProvider().connection, userWallet.publicKey, 5);
     const rentalId = "1111";
     const rentDurationMonths = new anchor.BN(12);
-    const tx = await program.methods.rentTree(rentalId, rentDurationMonths).accountsPartial({ signer: userWallet.publicKey }).signers([userWallet]).rpc();
+
+    const [mintPDA] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("token_mint"), userWallet.publicKey.toBuffer(), Buffer.from(rentalId)],
+      program.programId
+    );
+    const [treeMetadataPDA] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("tree_metadata"), userWallet.publicKey.toBuffer(), Buffer.from(rentalId)],
+      program.programId
+    );
+    console.log("Mint PDA", mintPDA.toBase58());
+    const tx = await program.methods.rentTree(rentalId, rentDurationMonths).accountsPartial({
+      signer: userWallet.publicKey,
+      mint: mintPDA,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+    }).signers([userWallet]).rpc();
+    const treeMetadataAccount = await program.account.treeMetadata.fetch(treeMetadataPDA);
+    expect(treeMetadataAccount.condition).to.equal("OK");
+    expect(treeMetadataAccount.mint.toBase58()).to.equal(mintPDA.toBase58());
+    expect(treeMetadataAccount.level).to.equal(1);
+    expect(treeMetadataAccount.owner.toBase58()).to.equal(userWallet.publicKey.toBase58());
+    expect(treeMetadataAccount.treeId).to.equal(rentalId);
+    expect(treeMetadataAccount.remainingMonths.toString()).to.equal(rentDurationMonths.toString());
     console.log("User account", userWallet.publicKey.toBase58());
     console.log("Your transaction signature", tx);
   });

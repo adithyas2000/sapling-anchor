@@ -7,12 +7,11 @@ use anchor_spl::token_interface::{token_metadata_initialize, TokenMetadataInitia
 use spl_token_metadata_interface::state::TokenMetadata;
 use spl_type_length_value::variable_len_pack::VariableLenPack;
 
-use crate::{error::ErrorCode, Initialize};
+use crate::{error::ErrorCode, RentTree};
 
-pub fn init_token_metadata(ctx: Context<Initialize>) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[b"token_mint", &[ctx.bumps.mint]]];
+pub fn init_token_metadata(ctx: &Context<RentTree>,signer_seeds:&[&[&[u8]]]) -> Result<()> {
 
-    let name = "Tree Rental".to_string();
+    let name = "Sapling tree".to_string();
     let symbol = "TREE".to_string();
     let uri = "https://raw.githubusercontent.com/adithyas2000/sapling-anchor/refs/heads/main/metadata.json".to_string();
     let token_metadata = TokenMetadata {
@@ -31,7 +30,7 @@ pub fn init_token_metadata(ctx: Context<Initialize>) -> Result<()> {
         CpiContext::new(
             ctx.accounts.system_program.to_account_info(),
             Transfer {
-                from: ctx.accounts.deployer.to_account_info(),
+                from: ctx.accounts.signer.to_account_info(),
                 to: ctx.accounts.mint.to_account_info(),
             },
         ),
@@ -45,7 +44,7 @@ pub fn init_token_metadata(ctx: Context<Initialize>) -> Result<()> {
             TokenMetadataInitialize {
                 program_id: ctx.accounts.token_program.to_account_info(),
                 metadata: ctx.accounts.mint.to_account_info(),
-                update_authority: ctx.accounts.deployer.to_account_info(),
+                update_authority: ctx.accounts.signer.to_account_info(),
                 mint_authority: ctx.accounts.mint.to_account_info(),
                 mint: ctx.accounts.mint.to_account_info(),
             },
@@ -55,5 +54,4 @@ pub fn init_token_metadata(ctx: Context<Initialize>) -> Result<()> {
         symbol,
         uri,
     )
-    // Ok(())
 }

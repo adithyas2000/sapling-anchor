@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-sapling = "DFeuaY7xMpbwKRWUbK82X6XJRnMDLNXFad429ysuSVgR"
+sapling = "9U6huWaa1U1tf2TWD9K6fDxkRpNcE4Jb16G72iZCeanX"
 
 [registry]
 url = "https://api.apr.dev"
