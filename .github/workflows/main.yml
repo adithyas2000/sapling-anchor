@@ -1,0 +1,15 @@
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  run_anchor_tests:
+    name: Running anchor tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: curl --proto '=https' --tlsv1.2 -sSfL https://solana-install.solana.workers.dev | bash
+      - run : solana config set -ul
+      - run: solana-keygen new
+      - run: solana-test-validator &
+      - run: solana airdrop 5
